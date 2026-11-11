@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>兩支氣瓶壓力等級計算（PADI RDP 公制）</title>
+<style>
+:root{--bg:#f4f7fa;--card:#fff;--ink:#14212b;--mute:#5d6b77;--line:#d9e1e8;--accent:#0a6fb5;--accent2:#e6f2fb;--ok:#1c7c4a;--okbg:#e7f5ec;--warn:#9a5b00;--warnbg:#fff4e0;--bad:#b42318;--badbg:#fdecea}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1519;--card:#182128;--ink:#e6edf2;--mute:#9aa8b3;--line:#2a3742;--accent:#4aa8ec;--accent2:#15293a;--ok:#5fd394;--okbg:#14301f;--warn:#f0b357;--warnbg:#33260f;--bad:#ff8a80;--badbg:#3a1714}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:1.25rem;margin:4px 0 2px}
+.sub{color:var(--mute);font-size:.85rem;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:1rem;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.tag{background:var(--accent);color:#fff;border-radius:999px;font-size:.75rem;padding:1px 9px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+label{display:block;font-size:.8rem;color:var(--mute);margin-bottom:3px}
+input[type=number],input[type=time]{width:100%;font-size:1.05rem;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-family:inherit}
+input:focus{outline:2px solid var(--accent);border-color:transparent}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;color:var(--ink);margin-top:10px}
+.chk input{margin-top:3px;width:18px;height:18px}
+button{width:100%;font-size:1.05rem;font-weight:600;padding:12px;border:0;border-radius:12px;background:var(--accent);color:#fff;cursor:pointer}
+.res-head{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.pill{background:var(--accent2);border-radius:12px;padding:8px 6px;text-align:center}
+.pill .k{font-size:.7rem;color:var(--mute);line-height:1.25}
+.pill .v{font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1.2}
+.pill .v.small{font-size:1.15rem;padding:5px 0}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+td{padding:6px 2px;border-bottom:1px solid var(--line);vertical-align:top}
+td:last-child{text-align:right;font-weight:600;white-space:nowrap}
+.sec{font-weight:700;color:var(--accent);padding-top:12px}
+.msg{border-radius:10px;padding:9px 11px;font-size:.85rem;margin:8px 0 0}
+.msg.ok{background:var(--okbg);color:var(--ok)}
+.msg.warn{background:var(--warnbg);color:var(--warn)}
+.msg.bad{background:var(--badbg);color:var(--bad)}
+.note{font-size:.75rem;color:var(--mute)}
+.note ul{padding-left:18px;margin:6px 0}
+#out:empty{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>兩支氣瓶壓力等級計算</h1>
+<p class="sub">依 PADI 休閒潛水計劃表（RDP）公制版表 1、表 2、表 3</p>
+
+<form id="f" autocomplete="off">
+<div class="card">
+<h2><span class="tag">第 1 支</span>第一次潛水</h2>
+<div class="grid3">
+<div><label for="d1">最大深度（公尺）</label><input id="d1" type="number" inputmode="decimal" min="1" max="42" step="0.1" value="18" required></div>
+<div><label for="t1">入水時間</label><input id="t1" type="time" value="09:00" required></div>
+<div><label for="b1">潛水時間（分）</label><input id="b1" type="number" inputmode="numeric" min="1" step="1" value="40" required></div>
+</div>
+</div>
+<div class="card">
+<h2><span class="tag">第 2 支</span>第二次潛水</h2>
+<div class="grid3">
+<div><label for="d2">最大深度（公尺）</label><input id="d2" type="number" inputmode="decimal" min="1" max="30" step="0.1" value="14" required></div>
+<div><label for="t2">入水時間</label><input id="t2" type="time" value="10:40" required></div>
+<div><label for="b2">潛水時間（分）</label><input id="b2" type="number" inputmode="numeric" min="1" step="1" value="35" required></div>
+</div>
+<label class="chk"><input id="cold" type="checkbox">寒冷水域或費力潛水（兩支的計畫深度各加 4 公尺）</label>
+</div>
+<button type="submit">計算</button>
+</form>
+
+<div id="out" class="card" style="margin-top:12px"></div>
+
+<div class="note card">
+<b>使用說明與限制</b>
+<ul>
+<li>深度無剛好的欄位時，一律取「下一個較深」的欄位；10.5 公尺以內可用 10 公尺欄位。時間無剛好時，取「下一個較長」的時間。</li>
+<li>水面休息時間 = 第二次入水時間 −（第一次入水時間 + 第一次潛水時間）。</li>
+<li>表 1 中標「↓」的格子（35m E、40m A/D、42m A/C）依表格指示往下一個等級讀取。</li>
+<li>重複潛水深度限制在 30 公尺以內，第二支深度應比第一支淺。</li>
+<li>本頁只是把紙本表格數位化以便計算，請以紙本 RDP 與教練指示為準，並與潛水電腦錶互相核對。</li>
+</ul>
+</div>
+</main>
+
+<script>
+const G = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const DEPTHS = [10,12,14,16,18,20,22,25,30,35,40,42];
+// 表 1：每個深度欄由 A 起的最大時間（分），null = 表上「↓」
+const T1 = {
+ 10:[10,20,26,30,34,37,41,45,50,54,59,64,70,75,82,88,95,104,112,122,133,145,160,178,199,219],
+ 12:[9,17,23,26,29,32,35,38,42,45,49,53,57,62,66,71,76,82,88,94,101,108,116,125,134,147],
+ 14:[8,15,19,22,24,27,29,32,35,37,40,43,47,50,53,57,61,64,68,73,77,82,87,92,98],
+ 16:[7,13,17,19,21,23,25,27,29,32,34,37,39,42,45,48,50,53,56,60,63,67,70,72],
+ 18:[6,11,15,16,18,20,22,24,26,28,30,32,34,36,39,41,43,45,48,51,53,55,56],
+ 20:[6,10,13,15,16,18,20,21,23,25,26,28,30,32,34,36,38,40,42,44,45],
+ 22:[5,9,12,13,15,16,18,19,21,22,24,25,27,29,30,32,34,36,37],
+ 25:[4,8,10,11,13,14,15,17,18,19,21,22,23,25,26,28,29],
+ 30:[3,6,8,9,10,11,12,13,14,15,16,17,19,20],
+ 35:[3,5,7,8,null,9,10,11,12,13,14],
+ 40:[null,5,6,null,7,8,9],
+ 42:[null,4,null,6,7,8]
+};
+// 表 2：每個起始等級，由該等級往 A 的各格「最大」水面休息分鐘數
+const T2 = {
+ A:[180],B:[47,228],C:[21,69,250],D:[8,30,78,259],E:[7,16,38,87,268],
+ F:[7,15,24,46,94,275],G:[6,13,22,31,53,101,282],H:[5,12,20,28,37,59,108,288],
+ I:[5,11,18,26,34,43,65,113,294],J:[5,11,17,24,31,40,49,71,119,300],
+ K:[4,10,16,22,29,37,45,54,76,124,305],L:[4,9,15,21,27,34,42,50,59,81,129,310],
+ M:[4,9,14,19,25,32,39,46,55,64,85,134,315],N:[3,8,13,18,24,30,36,43,51,59,68,90,138,319],
+ O:[3,8,12,17,23,28,34,41,47,55,63,72,94,143,324],
+ P:[3,7,12,16,21,27,32,38,45,51,59,67,76,98,147,328],
+ Q:[3,7,11,16,20,25,30,36,42,48,55,63,71,80,102,150,331],
+ R:[3,7,11,15,19,24,29,34,40,46,52,59,67,75,84,106,154,335],
+ S:[3,6,10,14,18,23,28,32,38,43,49,56,63,70,78,87,109,158,339],
+ T:[2,6,10,14,18,22,27,31,36,41,47,53,59,66,73,82,91,113,161,342],
+ U:[2,6,9,13,17,21,25,30,34,39,44,50,56,62,69,77,85,94,116,164,345],
+ V:[2,5,9,12,16,20,24,28,33,37,42,47,53,59,65,72,80,88,97,119,167,348],
+ W:[2,5,8,12,15,19,23,27,31,36,40,45,50,56,61,68,75,83,91,100,122,170,351],
+ X:[2,5,8,11,15,18,22,26,30,34,39,43,48,53,59,64,71,77,85,94,103,125,173,354],
+ Y:[2,5,8,11,14,18,21,25,29,33,37,41,46,51,56,62,68,74,80,88,96,106,128,176,357],
+ Z:[2,5,8,11,14,17,20,24,28,31,35,39,44,49,54,59,65,71,77,84,91,100,109,131,179,360]
+};
+
+function tableDepth(d){
+  if (d <= 10.5) return 10;
+  for (const x of DEPTHS) if (d <= x) return x;
+  return null;
+}
+const ndl = td => { const c=T1[td]; return c[c.length-1]; };
+// 依時間找壓力等級（↓ 格跳過）
+function groupFor(td, minutes){
+  const c = T1[td];
+  for (let i=0;i<c.length;i++) if (c[i]!==null && minutes <= c[i]) return i;
+  return -1; // 超過免減壓極限
+}
+// 安全停留：深度 ≥30m，或等級在免減壓極限 3 個等級之內
+function stopRequired(td, gi){ return td >= 30 || gi >= T1[td].length - 4; }
+// 表 2：休息後等級；回傳 -1 表示已超出表格（無殘氮）
+function afterSI(gi, si){
+  const row = T2[G[gi]];
+  for (let k=0;k<row.length;k++) if (si <= row[k]) return gi - k;
+  return -1;
+}
+// 表 3：殘氮時間（RNT），與表 1 同深度、同等級的數字相同；↓ 格取下一個等級（較保守）
+function rnt(td, gi){
+  const c = T1[td];
+  for (let i=gi;i<c.length;i++) if (c[i]!==null) return c[i];
+  return null; // 此等級已無法潛至此深度
+}
+const hm = m => Math.floor(m/60)+":"+String(m%60).padStart(2,"0");
+const toMin = s => { const [h,m]=s.split(":").map(Number); return h*60+m; };
+
+function calc(){
+  const cold = document.getElementById("cold").checked;
+  const add = cold ? 4 : 0;
+  const d1 = +document.getElementById("d1").value, d2 = +document.getElementById("d2").value;
+  const b1 = Math.round(+document.getElementById("b1").value), b2 = Math.round(+document.getElementById("b2").value);
+  const t1 = toMin(document.getElementById("t1").value), t2 = toMin(document.getElementById("t2").value);
+  const out = document.getElementById("out");
+  const rows = [], msgs = [];
+  const fail = (txt) => { out.innerHTML = `<div class="msg bad">${txt}</div>`; out.scrollIntoView({behavior:"smooth"}); };
+
+  if (!(d1>0 && d2>0 && b1>0 && b2>0) || isNaN(t1) || isNaN(t2)) return fail("請完整填寫所有欄位。");
+
+  // ---- 第一支 ----
+  const td1 = tableDepth(d1 + add);
+  if (!td1) return fail(`第一支計畫深度 ${d1+add} 公尺超過表格最大深度 42 公尺。`);
+  const g1 = groupFor(td1, b1);
+  if (g1 < 0) return fail(`第一支：${td1} 公尺的免減壓極限是 ${ndl(td1)} 分鐘，${b1} 分鐘已超過，表格無法計算。請依表上「緊急減壓」規定處理，並至少休息 6 小時以上（超過 5 分鐘以上須 24 小時）才可再潛。`);
+  rows.push(["sec","第一支潛水"]);
+  rows.push(["讀表深度", `${td1} 公尺${add?"（含 +4）":""}`]);
+  rows.push(["潛水時間 / 免減壓極限", `${b1} / ${ndl(td1)} 分`]);
+  rows.push(["出水時間", hm((t1+b1)%1440)]);
+  rows.push(["出水壓力等級", G[g1]]);
+  if (stopRequired(td1,g1)) msgs.push(["warn",`第一支：必須在 5 公尺做 3 分鐘安全停留（${td1>=30?"深度達 30 公尺以上":"壓力等級在免減壓極限 3 個等級內"}）。`]);
+  if (td1 === 42) msgs.push(["warn","42 公尺欄位僅供緊急情況使用，不要計畫潛到這個深度。"]);
+
+  // ---- 水面休息 ----
+  let si = t2 - (t1 + b1);
+  if (si < 0) si += 1440;
+  if (si < 0 || si >= 1440) return fail("時間有誤：第二次入水時間必須晚於第一次出水時間。");
+  const g2 = afterSI(g1, si);
+  rows.push(["sec","水面休息"]);
+  rows.push(["水面休息時間", hm(si)]);
+  rows.push(["休息後壓力等級", g2<0 ? "無殘氮" : G[g2]]);
+
+  // ---- 第二支 ----
+  const td2 = tableDepth(d2 + add);
+  rows.push(["sec","第二支潛水"]);
+  if (!td2) return fail(`第二支計畫深度 ${d2+add} 公尺超過表格最大深度。`);
+  if (d2 > d1) msgs.push(["warn","第二支比第一支深。計畫重複潛水時應由深而淺。"]);
+  let g3, tbt, r = 0, andl;
+
+  if (g2 < 0) {
+    rows.push(["讀表深度", `${td2} 公尺${add?"（含 +4）":""}`]);
+    andl = ndl(td2);
+    tbt = b2;
+    rows.push(["免減壓極限", `${andl} 分`]);
+    rows.push(["潛水時間", `${b2} 分`]);
+    msgs.push(["ok","水面休息已超過表 2 範圍，第二支視同第一次潛水，直接用表 1 計算。"]);
+  } else {
+    if (td2 > 30) return fail(`重複潛水深度應限制在 30 公尺以內，第二支讀表深度為 ${td2} 公尺。`);
+    r = rnt(td2, g2);
+    if (r === null) return fail(`休息後等級 ${G[g2]} 在 ${td2} 公尺已無剩餘免減壓時間，不能潛到這個深度。請延長水面休息或改淺一點。`);
+    andl = ndl(td2) - r;
+    rows.push(["讀表深度", `${td2} 公尺${add?"（含 +4）":""}`]);
+    rows.push(["殘氮時間 RNT", `${r} 分`]);
+    rows.push(["調整後免減壓極限 ANDL", `${andl} 分`]);
+    rows.push(["實際潛水時間 ABT", `${b2} 分`]);
+    tbt = r + b2;
+    rows.push(["總潛水時間 TBT（RNT＋ABT）", `${tbt} 分`]);
+    if (andl <= 0) return fail(`休息後等級 ${G[g2]} 在 ${td2} 公尺已無剩餘免減壓時間，請延長水面休息或改淺一點。`);
+  }
+  if (b2 > andl) {
+    out.innerHTML = renderHead(g1, si, g2, null) + renderTable(rows) +
+      `<div class="msg bad">第二支實際潛水時間 ${b2} 分已超過${g2<0?"免減壓極限":"調整後免減壓極限（ANDL）"} ${andl} 分，表格無法計算。請縮短第二支時間（最多 ${andl} 分）、改淺，或延長水面休息。</div>` + renderMsgs(msgs);
+    out.scrollIntoView({behavior:"smooth"}); return;
+  }
+  g3 = groupFor(td2, tbt);
+  rows.push(["出水時間", hm((t2+b2)%1440)]);
+  rows.push(["出水壓力等級", G[g3]]);
+  if (stopRequired(td2,g3)) msgs.push(["warn",`第二支：必須在 5 公尺做 3 分鐘安全停留（${td2>=30?"深度達 30 公尺以上":"壓力等級在免減壓極限 3 個等級內"}）。`]);
+  else msgs.push(["ok","兩支都在免減壓範圍內。仍建議每支潛水都做 5 公尺 3 分鐘安全停留。"]);
+  if (g3 >= G.indexOf("W")) msgs.push(["warn",`第二支出水等級為 ${G[g3]}。若當天還要第 3 支以上：W、X 之後每次水面休息至少 1 小時；Y、Z 之後至少 3 小時。`]);
+  msgs.push(["ok","重複潛水後，建議飛行前至少有 18 小時的水面休息。"]);
+
+  out.innerHTML = renderHead(g1, si, g2, g3) + renderTable(rows) + renderMsgs(msgs);
+  out.scrollIntoView({behavior:"smooth"});
+}
+function renderHead(g1, si, g2, g3){
+  const p = (k,v,small)=>`<div class="pill"><div class="k">${k}</div><div class="v${small?" small":""}">${v}</div></div>`;
+  return `<div class="res-head">${p("第一支後",G[g1])}${p("水面休息",hm(si),true)}${p("休息後",g2<0?"—":G[g2])}${p("第二支後",g3==null?"✕":G[g3])}</div>`;
+}
+function renderTable(rows){
+  return "<table>"+rows.map(r=> r[0]==="sec" ? `<tr><td class="sec" colspan="2">${r[1]}</td></tr>` : `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")+"</table>";
+}
+function renderMsgs(m){ return m.map(([c,t])=>`<div class="msg ${c}">${t}</div>`).join(""); }
+
+document.getElementById("f").addEventListener("submit", e => { e.preventDefault(); calc(); });
+try{ calc(); }catch(e){}
+</script>
+</body>
+</html>
